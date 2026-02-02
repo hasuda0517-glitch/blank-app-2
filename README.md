@@ -1,65 +1,66 @@
 import streamlit as st
-from supabase import create_client
 
-# =====================
-# Supabase 接続設定
-# =====================
-SUPABASE_URL = st.secrets["SUPABASE_URL"]
-SUPABASE_ANON_KEY = st.secrets["SUPABASE_ANON_KEY"]
+st.set_page_config(page_title="Supabase Todo 管理アプリ", layout="centered")
 
-supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
+st.markdown(
+    """
+# 📝 Supabase Todo 管理アプリ
 
-# =====================
-# UI
-# =====================
-st.title("📝 Supabase Todo 管理アプリ")
+Streamlit と **Supabase（PostgreSQL）** を利用した、シンプルで永続化可能な Todo 管理 Web アプリケーションです。  
+Todo の追加・完了・削除ができ、アプリがスリープ状態になってもデータはクラウド上に保存され続けます。
 
-# ---------------------
-# Todo 追加
-# ---------------------
-st.subheader("Todo を追加")
+---
 
-new_task = st.text_input("新しい Todo を入力してください")
+## URL
 
-if st.button("追加"):
-    if new_task.strip() != "":
-        supabase.table("todos").insert({
-            "task": new_task,
-            "is_done": False
-        }).execute()
-        st.success("Todo を追加しました")
-        st.rerun()
-    else:
-        st.warning("Todo を入力してください")
+この URL で試すことができます（スリープ状態のときは青色の起動ボタンを押してください）：  
+https://wordquiz1-0121.streamlit.app/
 
-# ---------------------
-# Todo 一覧表示
-# ---------------------
-st.subheader("Todo 一覧")
+---
 
-response = supabase.table("todos").select("*").order("created_at").execute()
+## 🌟 主な機能
 
-if response.data:
-    for todo in response.data:
-        col1, col2, col3 = st.columns([5, 1, 1])
+- **Todo 追加**：新しい Todo を入力してデータベースに保存  
+- **完了チェック**：チェックボックスで完了／未完了を切り替え  
+- **削除機能**：不要になった Todo を削除  
+- **自動 DB 連携**：Streamlit から Supabase に直接書き込み  
+- **データ永続化**：アプリ停止・再起動後もデータ保持  
 
-        # 完了チェック
-        checked = col1.checkbox(
-            todo["task"],
-            value=todo["is_done"],
-            key=f"check_{todo['id']}"
-        )
+---
 
-        # 状態更新
-        if checked != todo["is_done"]:
-            supabase.table("todos").update({
-                "is_done": checked
-            }).eq("id", todo["id"]).execute()
-            st.rerun()
+## 🛠 セットアップ方法
 
-        # 削除ボタン
-        if col3.button("🗑", key=f"delete_{todo['id']}"):
-            supabase.table("todos").delete().eq("id", todo["id"]).execute()
-            st.rerun()
-else:
-    st.write("まだ Todo がありません")
+### 1. Supabase プロジェクトの作成（Free プラン）
+
+1. https://supabase.com にアクセス  
+2. Free プランで新規プロジェクトを作成  
+3. 以下を控えておく  
+   - Project URL  
+   - anon public key  
+
+---
+
+### 2. データベーステーブルの作成
+
+**todos テーブル**
+
+| column | type |
+|------|------|
+| id | int8 (PK, identity) |
+| task | text |
+| is_done | bool (default: false) |
+| created_at | timestamptz (default: now()) |
+
+---
+
+### 3. Row Level Security（RLS）
+
+```sql
+ALTER TABLE todos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow all todos"
+ON todos
+FOR ALL
+USING (true)
+WITH CHECK (true);
+
