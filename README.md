@@ -1,9 +1,4 @@
-import streamlit as st
 
-st.set_page_config(page_title="Supabase Todo 管理アプリ", layout="centered")
-
-st.markdown(
-    """
 # 📝 Supabase Todo 管理アプリ
 
 Streamlit と **Supabase（PostgreSQL）** を利用した、シンプルで永続化可能な Todo 管理 Web アプリケーションです。  
