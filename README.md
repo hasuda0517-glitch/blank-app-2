@@ -9,7 +9,7 @@ Todo の追加・完了・削除ができ、アプリがスリープ状態にな
 ## URL
 
 この URL で試すことができます（スリープ状態のときは青色の起動ボタンを押してください）：  
-https://wordquiz1-0121.streamlit.app/
+https://blank-app-bng6bjgiop.streamlit.app/
 
 ---
 
