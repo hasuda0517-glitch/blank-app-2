@@ -1,88 +1,35 @@
-import streamlit as st
-from supabase import create_client, Client
+\import streamlit as st
+from supabase import create_client
 
-# --------------------
-# Supabase 接続
-# --------------------
-supabase: Client = create_client(
-    st.secrets["SUPABASE_URL"],
-    st.secrets["SUPABASE_KEY"]
-)
+# ===== Supabase 接続 =====
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_ANON_KEY"]
+supabase = create_client(url, key)
 
-st.set_page_config(page_title="Gamified Todo", page_icon="🎮")
-st.title("🎮 Gamified Todo App")
+st.title("📝 Todoリスト（Supabase）")
 
-# --------------------
-# Todo 追加
-# --------------------
-st.subheader("➕ 新しいTodo")
+# ===== Todo追加 =====
+task = st.text_input("新しいTodo")
 
-task = st.text_input("Todo内容")
-category = st.selectbox("カテゴリ", ["勉強", "課題", "私用", "その他"])
-priority = st.selectbox("優先度", ["低", "中", "高"])
-
-priority_point = {"低": 1, "中": 3, "高": 5}
-
-if st.button("追加する"):
+if st.button("追加"):
     if task:
         supabase.table("todos").insert({
             "task": task,
-            "category": category,
-            "priority": priority,
-            "point": priority_point[priority]
+            "is_done": False
         }).execute()
-        st.success("Todo を追加しました！")
+        st.success("追加しました")
     else:
         st.warning("Todoを入力してください")
 
-# --------------------
-# Todo 一覧
-# --------------------
-st.subheader("📋 Todo 一覧")
+# ===== Todo一覧表示 =====
+st.subheader("Todo一覧")
 
-res = supabase.table("todos").select("*").order("created_at").execute()
-todos = res.data
+todos = supabase.table("todos").select("*").order("id").execute()
 
-total_point = 0
-
-for todo in todos:
-    col1, col2, col3 = st.columns([4, 2, 1])
-
-    with col1:
-        done = st.checkbox(
-            f"{todo['task']}（{todo['category']} / {todo['priority']}）",
-            value=todo["is_done"],
-            key=f"check_{todo['id']}"
-        )
-
-    with col2:
-        st.write(f"🎯 {todo['point']} pt")
-
-    with col3:
-        if st.button("🗑", key=f"del_{todo['id']}"):
-            supabase.table("todos").delete().eq("id", todo["id"]).execute()
-            st.experimental_rerun()
-
-    if done != todo["is_done"]:
-        supabase.table("todos").update({
-            "is_done": done
-        }).eq("id", todo["id"]).execute()
-        st.experimental_rerun()
-
-    if todo["is_done"]:
-        total_point += todo["point"]
-
-# --------------------
-# スコア表示
-# --------------------
-st.divider()
-st.subheader("🏆 今日のスコア")
-
-st.metric("獲得ポイント", f"{total_point} pt")
-
-if total_point >= 15:
-    st.success("🔥 めっちゃ頑張ってる！")
-elif total_point >= 5:
-    st.info("👍 いいペース")
+if todos.data:
+    for todo in todos.data:
+        col1, col2 = st.columns([4, 1])
+        col1.write(todo["task"])
+        col2.write("✅" if todo["is_done"] else "⬜")
 else:
-    st.warning("😴 まだいける！")
+    st.write("まだTodoがありません")
