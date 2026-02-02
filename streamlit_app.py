@@ -1,35 +1,65 @@
-\import streamlit as st
+import streamlit as st
 from supabase import create_client
 
-# ===== Supabase 接続 =====
-url = st.secrets["SUPABASE_URL"]
-key = st.secrets["SUPABASE_ANON_KEY"]
-supabase = create_client(url, key)
+# ========================
+# Supabase 接続
+# ========================
+SUPABASE_URL = st.secrets["SUPABASE_URL"]
+SUPABASE_ANON_KEY = st.secrets["SUPABASE_ANON_KEY"]
 
-st.title("📝 Todoリスト（Supabase）")
+supabase = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-# ===== Todo追加 =====
-task = st.text_input("新しいTodo")
+# ========================
+# UI
+# ========================
+st.title("📝 Todoリスト管理アプリ（Supabase）")
+
+# ------------------------
+# Todo 追加
+# ------------------------
+st.subheader("Todoを追加")
+
+new_task = st.text_input("新しいTodoを入力")
 
 if st.button("追加"):
-    if task:
+    if new_task.strip() != "":
         supabase.table("todos").insert({
-            "task": task,
+            "task": new_task,
             "is_done": False
         }).execute()
-        st.success("追加しました")
+        st.success("Todoを追加しました")
+        st.rerun()
     else:
         st.warning("Todoを入力してください")
 
-# ===== Todo一覧表示 =====
+# ------------------------
+# Todo 一覧
+# ------------------------
 st.subheader("Todo一覧")
 
-todos = supabase.table("todos").select("*").order("id").execute()
+response = supabase.table("todos").select("*").order("id").execute()
 
-if todos.data:
-    for todo in todos.data:
-        col1, col2 = st.columns([4, 1])
-        col1.write(todo["task"])
-        col2.write("✅" if todo["is_done"] else "⬜")
+if response.data:
+    for todo in response.data:
+        col1, col2, col3 = st.columns([4, 1, 1])
+
+        # 完了チェック
+        checked = col1.checkbox(
+            todo["task"],
+            value=todo["is_done"],
+            key=f"check_{todo['id']}"
+        )
+
+        # 更新
+        if checked != todo["is_done"]:
+            supabase.table("todos").update({
+                "is_done": checked
+            }).eq("id", todo["id"]).execute()
+            st.rerun()
+
+        # 削除
+        if col3.button("🗑", key=f"del_{todo['id']}"):
+            supabase.table("todos").delete().eq("id", todo["id"]).execute()
+            st.rerun()
 else:
     st.write("まだTodoがありません")
