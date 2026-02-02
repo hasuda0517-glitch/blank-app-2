@@ -23,7 +23,7 @@ new_task = st.text_input("新しいTodoを入力")
 
 if st.button("追加"):
     if new_task.strip() != "":
-        supabase.table("todos").insert({
+        supabase.table("todo").insert({
             "task": new_task,
             "is_done": False
         }).execute()
@@ -37,7 +37,7 @@ if st.button("追加"):
 # ------------------------
 st.subheader("Todo一覧")
 
-response = supabase.table("todos").select("*").order("id").execute()
+response = supabase.table("todo").select("*").order("id").execute()
 
 if response.data:
     for todo in response.data:
@@ -52,14 +52,14 @@ if response.data:
 
         # 更新
         if checked != todo["is_done"]:
-            supabase.table("todos").update({
+            supabase.table("todo").update({
                 "is_done": checked
             }).eq("id", todo["id"]).execute()
             st.rerun()
 
         # 削除
         if col3.button("🗑", key=f"del_{todo['id']}"):
-            supabase.table("todos").delete().eq("id", todo["id"]).execute()
+            supabase.table("todo").delete().eq("id", todo["id"]).execute()
             st.rerun()
 else:
     st.write("まだTodoがありません")
